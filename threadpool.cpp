@@ -16,7 +16,26 @@ void Thread::start() {
 
 void ThreadPool::threadFunc() {
     std::cout<<"ThreadPool::threadFunc(), this thread id: "<<std::this_thread::get_id()<<std::endl;
+    for (;;) {
+        std::shared_ptr<Task> task;
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            notEmptyCondition_.wait(lock,[&]{return !tasks_.empty();});
 
+            task=tasks_.front();
+            tasks_.pop();
+            --taskSize_;
+            // 如果队列中还有任务，通知其他线程来处理任务
+            if (!tasks_.empty()) {
+                notEmptyCondition_.notify_all();
+            }
+
+            // 通知可以继续提交任务
+            notFullCondition_.notify_all();
+        }
+        if (task)
+            task->run();
+    }
 }
 
 ThreadPool::ThreadPool():
@@ -47,7 +66,7 @@ void ThreadPool::setTaskQueueThreshold(int taskQueueThreshold) {
     taskQueueThreshold_ = taskQueueThreshold;
 }
 
-void ThreadPool::submitTask(std::shared_ptr<Task> task) {
+void ThreadPool::submitTask(const std::shared_ptr<Task>& task) {
     //获取锁
     // 线程通信，等待任务队列有空余位置
     //如果有空余了，就把任务放入队列
@@ -64,7 +83,6 @@ void ThreadPool::submitTask(std::shared_ptr<Task> task) {
     ++taskSize_;
 
     notEmptyCondition_.notify_all();
-
 }
 
 
