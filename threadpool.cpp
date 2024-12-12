@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-Thread::Thread(func f) {
+Thread::Thread(const func &f) {
     func_  = f;
 }
 
@@ -67,10 +67,10 @@ void ThreadPool::setTaskQueueThreshold(int taskQueueThreshold) {
 }
 
 void ThreadPool::submitTask(const std::shared_ptr<Task>& task) {
-    //获取锁
+    // 获取锁
     // 线程通信，等待任务队列有空余位置
-    //如果有空余了，就把任务放入队列
-    //放入成功以后，在notEmpty_信号量上通知
+    // 如果有空余了，就把任务放入队列
+    // 放入成功以后，在notEmpty_信号量上通知
     std::unique_lock<std::mutex> lock(mutex_);
     if (!notFullCondition_.wait_for(lock,
         std::chrono::seconds(1),

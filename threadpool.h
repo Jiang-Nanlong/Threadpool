@@ -33,7 +33,7 @@ private:
     func func_;
 
 public:
-    explicit Thread(func func);
+    explicit Thread(const func &func);
 
     ~Thread()=default;
 
