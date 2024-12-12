@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-Thread::Thread(const func &f) {
-    func_  = f;
+Thread::Thread(const func &func) {
+    func_  = func;
 }
 
 void Thread::start() {
