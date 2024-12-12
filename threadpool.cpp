@@ -15,7 +15,7 @@ void Thread::start() {
 }
 
 void ThreadPool::threadFunc() {
-    std::cout<<"ThreadPool::threadFunc(), this thread id: "<<std::this_thread::get_id()<<std::endl;
+    // std::cout<<"ThreadPool::threadFunc(), this thread id: "<<std::this_thread::get_id()<<std::endl;
     for (;;) {
         std::shared_ptr<Task> task;
         {
@@ -41,7 +41,7 @@ void ThreadPool::threadFunc() {
 ThreadPool::ThreadPool():
     threadSize_(0),
     taskSize_(0),
-    taskQueueThreshold_(1024),
+    taskQueueThreshold_(4),
     poolMode_(PoolMode::MODE_FIXED){
 }
 

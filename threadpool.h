@@ -17,12 +17,53 @@ enum class PoolMode {
     MODE_CACHED,
 };
 
+class Any {
+    public:
+    Any() = default;
+    Any(const Any&) = delete;
+    Any& operator=(const Any&) = delete;
+    Any(Any&&)=default;
+    Any& operator=(Any&&)=default;
+    template <typename T>
+    Any(T val):base_(std::make_unique<Derived<T>>(val)){}
+
+    ~Any() = default;
+
+    template <typename T>
+    T get() const {
+        // dynamic_cast支持RTTI
+        Derived<T>* pd = dynamic_cast<Derived<T>*>(base_.get());
+        if (pd == nullptr)
+            throw std::bad_cast();
+        return pd->value;
+    }
+private:
+    class Base {
+    public:
+        virtual ~Base() = default;
+    };
+
+    template <typename T>
+    class Derived : public Base {
+    public:
+        T value;
+
+    public:
+        Derived(T value) : value(value) {}
+    };
+
+private:
+    std::unique_ptr<Base> base_;
+};
+
+
+
 // 任务的抽象基类
 class Task {
 public:
     virtual ~Task() = default;
 
-    virtual void run() = 0;
+    virtual Any run() = 0;
 };
 
 class Thread {
