@@ -111,7 +111,7 @@ void ThreadPool::setTaskQueueThreshold(int taskQueueThreshold) {
     taskQueueThreshold_ = taskQueueThreshold;
 }
 
-Result ThreadPool::submitTask(std::shared_ptr<Task> task) {
+Result ThreadPool::submitTask(const std::shared_ptr<Task>& task) {
     // 获取锁
     // 线程通信，等待任务队列有空余位置
     // 如果有空余了，就把任务放入队列

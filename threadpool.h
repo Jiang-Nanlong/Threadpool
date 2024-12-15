@@ -160,7 +160,7 @@ public:
     void setTaskQueueThreshold(int taskQueueThreshold);
 
     // 向任务队列中添加任务
-    Result submitTask(std::shared_ptr<Task> task);
+    Result submitTask(const std::shared_ptr<Task>& task);
 
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
