@@ -97,8 +97,8 @@ void ThreadPool::threadFunc(uint32_t threadId) {
 
 #else
             // 实现第二种方法，另一种是当前任务队列为空，然后当前线程一段时间内一直没有执行任务，就释放当前线程
-            while (taskSize_ == 0) {
-                if (poolMode_ == PoolMode::MODE_CACHED) {
+            if (poolMode_ == PoolMode::MODE_CACHED) {
+                while (taskSize_ == 0) {
                     if (std::cv_status::timeout == notEmptyCondition_.wait_for(lock, std::chrono::seconds(1))) {
                         auto now = std::chrono::high_resolution_clock::now();
                         auto time = std::chrono::duration_cast<std::chrono::seconds>(now - lasttime);
@@ -112,9 +112,9 @@ void ThreadPool::threadFunc(uint32_t threadId) {
                             return;
                         }
                     }
-                } else {
-                    notEmptyCondition_.wait(lock, [&] { return !tasks_.empty(); });
                 }
+            } else {
+                notEmptyCondition_.wait(lock, [&] { return !tasks_.empty(); });
             }
 #endif
 

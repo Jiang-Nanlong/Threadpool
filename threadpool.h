@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <functional>
 
-#define USE_TIMEOUT_STRATEGY true
+#define USE_TIMEOUT_STRATEGY false
 
 constexpr int MAX_THREADS = 8;
 constexpr int MAX_QUEUE_SIZE = 1024;
