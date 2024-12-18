@@ -10,9 +10,7 @@
 #include <condition_variable>
 #include <functional>
 
-#define USE_TIMEOUT_STRATEGY false
-
-constexpr int MAX_THREADS = 8;
+constexpr int MAX_THREADS = 200;
 constexpr int MAX_QUEUE_SIZE = 1024;
 constexpr int MAX_THREAD_DESTROY_INTERVAL = 10; // 释放线程的时间间隔，单位秒
 
@@ -187,7 +185,7 @@ public:
 
     ~ThreadPool();
 
-    void start(int threadnum);
+    void start(__uint8_t threadnum = std::thread::hardware_concurrency());
 
     void setMode(const PoolMode &mode);
 

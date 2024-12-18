@@ -70,10 +70,12 @@ void ThreadPool::threadFunc(uint32_t threadId) {
     auto lasttime = std::chrono::high_resolution_clock::now();
     while (isRunning_) {
         // std::cout<<"thread: "<<std::this_thread::get_id()<<"已就绪"<<std::endl;
-        std::shared_ptr<Task> task; {
+        std::shared_ptr<Task> task;
+        //
+        {
             std::unique_lock<std::mutex> lock(mutex_);
             // 这里如果一个线程阻塞了太长时间就应该释放它
-            while (tasks_.empty()) {
+            while (taskSize_.load() == 0) {
                 if (poolMode_ == PoolMode::MODE_CACHED) {
                     // 这个地方有个问题，交换下边两个if语句以后就会把所有的线程都释放掉
                     // if (std::cv_status::timeout == notEmptyCondition_.wait_for(
@@ -117,19 +119,21 @@ void ThreadPool::threadFunc(uint32_t threadId) {
                 }
             }
 
-            --idleThreadSize_;
-            std::cout << idleThreadSize_ << std::endl;
             task = tasks_.front();
             tasks_.pop();
+
             --taskSize_;
+            // std::cout << "taskSize_: " << taskSize_ << std::endl;
             // 如果队列中还有任务，通知其他线程来处理任务
-            if (!tasks_.empty()) {
+            if (taskSize_.load() > 0) {
                 notEmptyCondition_.notify_all();
             }
-
             // 通知可以继续提交任务
             notFullCondition_.notify_all();
         }
+
+        --idleThreadSize_;
+        std::cout << "idleThreadSize_: " << idleThreadSize_ << std::endl;
         if (task)
             task->excute();
         ++idleThreadSize_;
@@ -165,13 +169,13 @@ ThreadPool::~ThreadPool() {
     exitCondition_.wait(lock, [&] { return threads_.empty(); });
 }
 
-void ThreadPool::start(int threadnum) {
+void ThreadPool::start(__uint8_t threadnum) {
     isRunning_ = true;
-    initThreadSize_ = threadnum;
+    initThreadSize_ = std::min(static_cast<int>(threadnum), threadSizeThreshold_);
 
     for (int i = 0; i < initThreadSize_; ++i) {
-        //auto ptr = std::make_unique<Thread>(std::bind(&ThreadPool::threadFunc, this, std::placeholders::_1));
-        auto ptr = std::make_unique<Thread>([this](int &&PH1) { threadFunc(std::forward<decltype(PH1)>(PH1)); });
+        auto ptr = std::make_unique<Thread>(std::bind(&ThreadPool::threadFunc, this, std::placeholders::_1));
+        // auto ptr = std::make_unique<Thread>([this](int &&PH1) { threadFunc(std::forward<decltype(PH1)>(PH1)); });
         uint32_t threadId = ptr->getThreadId();
         threads_.emplace(threadId, std::move(ptr));
     }
@@ -210,7 +214,7 @@ Result ThreadPool::submitTask(const std::shared_ptr<Task> &task) {
         std::unique_lock<std::mutex> lock(mutex_);
         if (!notFullCondition_.wait_for(lock,
                                         std::chrono::seconds(1),
-                                        [this] { return tasks_.size() < taskQueueThreshold_; })) {
+                                        [&] { return taskSize_.load() < taskQueueThreshold_; })) {
             // 到时间结束也没有满足条件
             std::cerr << "ThreadPool::submitTask() failed" << std::endl;
             return Result(task, false);
@@ -223,8 +227,8 @@ Result ThreadPool::submitTask(const std::shared_ptr<Task> &task) {
     // 创建新线程
     if (poolMode_ == PoolMode::MODE_CACHED && taskSize_ > idleThreadSize_ && currentThreadSize_ <
         threadSizeThreshold_) {
-        //auto ptr = std::make_unique<Thread>(std::bind(&ThreadPool::threadFunc, this, std::placeholders::_1));
-        auto ptr = std::make_unique<Thread>([this](int &&PH1) { threadFunc(std::forward<decltype(PH1)>(PH1)); });
+        auto ptr = std::make_unique<Thread>(std::bind(&ThreadPool::threadFunc, this, std::placeholders::_1));
+        // auto ptr = std::make_unique<Thread>([this](int &&PH1) { threadFunc(std::forward<decltype(PH1)>(PH1)); });
         uint32_t threadId = ptr->getThreadId();
         threads_.emplace(threadId, std::move(ptr));
         threads_[threadId]->start();
