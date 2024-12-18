@@ -67,15 +67,12 @@ uint32_t Thread::getThreadId() const {
 void ThreadPool::threadFunc(uint32_t threadId) {
     std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() << "  is ready" <<
             std::endl;
-    auto lasttime = std::chrono::high_resolution_clock::now();
+    // auto lasttime = std::chrono::high_resolution_clock::now();
     for (;;) {
         // std::cout<<"thread: "<<std::this_thread::get_id()<<"已就绪"<<std::endl;
         std::shared_ptr<Task> task; {
             std::unique_lock<std::mutex> lock(mutex_);
             // 这里如果一个线程阻塞了太长时间就应该释放它
-            // 我觉得这里的线程释放可以有两种策略：一种是当前线程在一段时间内一直没有执行任务；另一种是当前任务队列为空，然后当前线程一段时间内一直没有执行任务
-#if defined(USE_TIMEOUT_STRATEGY) && (USE_TIMEOUT_STRATEGY==true)
-            // 实现了第一种方法，比较简单直接，但是在某些时刻可能会频繁的创建线程和销毁线程
             if (poolMode_ == PoolMode::MODE_CACHED) {
                 // 这个地方有个问题，交换下边两个if语句以后就会把所有的线程都释放掉
                 if (!notEmptyCondition_.wait_for(
@@ -87,36 +84,11 @@ void ThreadPool::threadFunc(uint32_t threadId) {
                         threads_.erase(threadId);
                         --idleThreadSize_;
                         --currentThreadSize_;
-                        // std::cout << "currentThreadSize_: " << currentThreadSize_ << std::endl;
-                        // std::cout << "idleThreadSize_: " << idleThreadSize_ << std::endl;
                         return;
                     }
                 }
             }
             notEmptyCondition_.wait(lock, [&] { return !tasks_.empty(); });
-
-#else
-            // 实现第二种方法，另一种是当前任务队列为空，然后当前线程一段时间内一直没有执行任务，就释放当前线程
-            if (poolMode_ == PoolMode::MODE_CACHED) {
-                while (taskSize_ == 0) {
-                    if (std::cv_status::timeout == notEmptyCondition_.wait_for(lock, std::chrono::seconds(1))) {
-                        auto now = std::chrono::high_resolution_clock::now();
-                        auto time = std::chrono::duration_cast<std::chrono::seconds>(now - lasttime);
-                        if (time.count() > MAX_THREAD_DESTROY_INTERVAL && currentThreadSize_ > initThreadSize_) {
-                            std::cout << "ThreadPool::threadFunc(), currentThreadSize: " << currentThreadSize_ <<
-                                    std::endl;
-                            threads_.erase(threadId);
-                            --currentThreadSize_;
-                            --idleThreadSize_;
-
-                            return;
-                        }
-                    }
-                }
-            } else {
-                notEmptyCondition_.wait(lock, [&] { return !tasks_.empty(); });
-            }
-#endif
 
             --idleThreadSize_;
             std::cout << idleThreadSize_ << std::endl;
@@ -134,7 +106,7 @@ void ThreadPool::threadFunc(uint32_t threadId) {
         if (task)
             task->excute();
         ++idleThreadSize_;
-        lasttime = std::chrono::high_resolution_clock::now();
+        // lasttime = std::chrono::high_resolution_clock::now();
         std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() << "  complished" <<
                 std::endl;
     }
