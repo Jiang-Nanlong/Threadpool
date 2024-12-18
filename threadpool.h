@@ -176,6 +176,7 @@ private:
     PoolMode poolMode_;
 
     std::atomic_bool isRunning_;
+    std::condition_variable exitCondition_;
 
 private:
     // 从任务队列中消费任务
@@ -184,7 +185,7 @@ private:
 public:
     ThreadPool();
 
-    ~ThreadPool() = default;
+    ~ThreadPool();
 
     void start(int threadnum);
 
