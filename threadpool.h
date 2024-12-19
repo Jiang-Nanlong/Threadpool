@@ -185,7 +185,7 @@ public:
 
     ~ThreadPool();
 
-    void start(__uint8_t threadnum = std::thread::hardware_concurrency());
+    void start(uint8_t threadnum = std::thread::hardware_concurrency());
 
     void setMode(const PoolMode &mode);
 

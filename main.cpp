@@ -34,11 +34,11 @@ int main() {
 
 #ifdef TEST
     Result re1 = pool.submitTask(std::make_shared<test>(1, 100000000));
-    // Result re2 = pool.submitTask(std::make_shared<test>(100000001, 200000000));
-    // Result re3 = pool.submitTask(std::make_shared<test>(200000001, 300000000));
-    // Result re4 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
-    // Result re5 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
-    // Result re6 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
+    Result re2 = pool.submitTask(std::make_shared<test>(100000001, 200000000));
+    Result re3 = pool.submitTask(std::make_shared<test>(200000001, 300000000));
+    Result re4 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
+    Result re5 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
+    Result re6 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
 
     // ulong res1 = re1.get().cast_<ulong>();
     // ulong res2 = re2.get().cast_<ulong>();

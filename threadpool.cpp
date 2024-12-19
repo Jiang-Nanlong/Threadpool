@@ -90,6 +90,9 @@ void ThreadPool::threadFunc(uint32_t threadId) {
                     //     }
                     // }
                     // 这里还是不能用上边的写法，因为在剩余最后initThreadSize_个线程时，没法阻塞住
+
+                    // 这里是对的，当往任务队列中添加任务时，会调用notEmptyCondition_.notify_all函数唤醒所有的notEmptyCondition_.wait_for，但只有一个线程会抢到锁，然后取出任务，然后退出{}的作用域，释放锁，执行任务。
+                    // 此时，其余被唤醒的线程又可以抢到锁了，但是此时任务队列为空了，该线程会一直在while(taskSize_.load()==0)中循环，然后释放锁，继续阻塞在wait_for处，另外几个线程也要依次走过这个流程。
                     if (std::cv_status::timeout == notEmptyCondition_.wait_for(lock, std::chrono::seconds(1))) {
                         auto now = std::chrono::high_resolution_clock::now();
                         auto time = std::chrono::duration_cast<std::chrono::seconds>(now - lasttime);
@@ -169,7 +172,7 @@ ThreadPool::~ThreadPool() {
     exitCondition_.wait(lock, [&] { return threads_.empty(); });
 }
 
-void ThreadPool::start(__uint8_t threadnum) {
+void ThreadPool::start(uint8_t threadnum) {
     isRunning_ = true;
     initThreadSize_ = std::min(static_cast<int>(threadnum), threadSizeThreshold_);
 
