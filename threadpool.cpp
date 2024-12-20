@@ -160,6 +160,7 @@ ThreadPool::~ThreadPool() {
     isRunning_ = false;
 
     std::unique_lock<std::mutex> lock(mutex_);
+    // notEmptyCondition_.notify_all尽可能的往后靠，在线程的退出时有用
     notEmptyCondition_.notify_all();
     exitCondition_.wait(lock, [&] { return threads_.empty(); });
 }
