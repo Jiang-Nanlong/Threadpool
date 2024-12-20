@@ -187,7 +187,7 @@ public:
 
     void start(uint8_t threadnum = std::thread::hardware_concurrency());
 
-    void setMode(const PoolMode &mode);
+    void setMode(const PoolMode &mode = PoolMode::MODE_FIXED);
 
     void setTaskQueueThreshold(int taskQueueThreshold);
 

@@ -75,7 +75,7 @@ void ThreadPool::threadFunc(uint32_t threadId) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
             // 这里如果一个线程阻塞了太长时间就应该释放它
-            while (taskSize_.load() == 0) {
+            while (isRunning_ && taskSize_.load() == 0) {
                 if (poolMode_ == PoolMode::MODE_CACHED) {
                     // 这个地方有个问题，交换下边两个if语句以后就会把所有的线程都释放掉
                     // if (std::cv_status::timeout == notEmptyCondition_.wait_for(
@@ -109,17 +109,9 @@ void ThreadPool::threadFunc(uint32_t threadId) {
                     // MODE_FIXED模式
                     notEmptyCondition_.wait(lock);
                 }
-                if (!isRunning_) {
-                    threads_.erase(threadId);
-                    // 其实这两个变量更不更新无所谓，反正都是释放所有线程
-                    --idleThreadSize_;
-                    --currentThreadSize_;
-                    exitCondition_.notify_all();
-                    std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() <<
-                            "  exit" <<
-                            std::endl;
-                    return;
-                }
+            }
+            if (!isRunning_) {
+                break;
             }
 
             task = tasks_.front();
@@ -166,9 +158,9 @@ ThreadPool::ThreadPool(): initThreadSize_(0),
 
 ThreadPool::~ThreadPool() {
     isRunning_ = false;
-    notEmptyCondition_.notify_all();
 
     std::unique_lock<std::mutex> lock(mutex_);
+    notEmptyCondition_.notify_all();
     exitCondition_.wait(lock, [&] { return threads_.empty(); });
 }
 
