@@ -68,15 +68,27 @@ void ThreadPool::threadFunc(uint32_t threadId) {
     std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() << "  is ready" <<
             std::endl;
     auto lasttime = std::chrono::high_resolution_clock::now();
-    while (isRunning_) {
+    while (true) {
         // 但是这里又会遇到一个问题，当某个线程当前正好在执行任务时，调用了线程池的析构函数，把isRunning_置为false，那么就不会进入次循环了，而是直接退出，即便是任务队列中还有任务，每个线程都是如此，那么最后任务队列不会被清空
+        // 所以就不能使用isRunning_来作为循环的判断条件了，只有当任务队列中没有任务以后，才应该检查isRunning_的值
         // std::cout<<"thread: "<<std::this_thread::get_id()<<"已就绪"<<std::endl;
         std::shared_ptr<Task> task;
         //
         {
             std::unique_lock<std::mutex> lock(mutex_);
             // 这里如果一个线程阻塞了太长时间就应该释放它
-            while (isRunning_ && taskSize_.load() == 0) {
+            while (taskSize_.load() == 0) {
+                if (!isRunning_) {
+                    threads_.erase(threadId);
+                    // 其实这两个变量更不更新无所谓，反正都是释放所有线程
+                    --idleThreadSize_;
+                    --currentThreadSize_;
+                    std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() <<
+                            "  exit" <<
+                            std::endl;
+                    exitCondition_.notify_all();
+                    return;
+                }
                 if (poolMode_ == PoolMode::MODE_CACHED) {
                     // 这个地方有个问题，交换下边两个if语句以后就会把所有的线程都释放掉
                     // if (std::cv_status::timeout == notEmptyCondition_.wait_for(
@@ -111,9 +123,6 @@ void ThreadPool::threadFunc(uint32_t threadId) {
                     notEmptyCondition_.wait(lock);
                 }
             }
-            if (!isRunning_) {
-                break;
-            }
 
             task = tasks_.front();
             tasks_.pop();
@@ -137,14 +146,6 @@ void ThreadPool::threadFunc(uint32_t threadId) {
         std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() << "  complished" <<
                 std::endl;
     }
-    threads_.erase(threadId);
-    // 其实这两个变量更不更新无所谓，反正都是释放所有线程
-    --idleThreadSize_;
-    --currentThreadSize_;
-    std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() <<
-            "  exit" <<
-            std::endl;
-    exitCondition_.notify_all();
 }
 
 ThreadPool::ThreadPool(): initThreadSize_(0),
