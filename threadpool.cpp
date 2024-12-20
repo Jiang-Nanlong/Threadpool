@@ -69,6 +69,7 @@ void ThreadPool::threadFunc(uint32_t threadId) {
             std::endl;
     auto lasttime = std::chrono::high_resolution_clock::now();
     while (isRunning_) {
+        // 但是这里又会遇到一个问题，当某个线程当前正好在执行任务时，调用了线程池的析构函数，把isRunning_置为false，那么就不会进入次循环了，而是直接退出，即便是任务队列中还有任务，每个线程都是如此，那么最后任务队列不会被清空
         // std::cout<<"thread: "<<std::this_thread::get_id()<<"已就绪"<<std::endl;
         std::shared_ptr<Task> task;
         //
@@ -140,10 +141,10 @@ void ThreadPool::threadFunc(uint32_t threadId) {
     // 其实这两个变量更不更新无所谓，反正都是释放所有线程
     --idleThreadSize_;
     --currentThreadSize_;
-    exitCondition_.notify_all();
     std::cout << "ThreadPool::threadFunc(), this thread id: " << std::this_thread::get_id() <<
             "  exit" <<
             std::endl;
+    exitCondition_.notify_all();
 }
 
 ThreadPool::ThreadPool(): initThreadSize_(0),
