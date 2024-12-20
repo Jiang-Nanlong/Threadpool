@@ -9,6 +9,9 @@
 #include <memory>
 #include <condition_variable>
 #include <functional>
+#include <iostream>
+#include <utility>
+#include <thread>
 
 constexpr int MAX_THREADS = 200;
 constexpr int MAX_QUEUE_SIZE = 1024;

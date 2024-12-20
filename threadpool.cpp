@@ -3,9 +3,6 @@
 //
 #include "threadpool.h"
 
-#include <iostream>
-#include <utility>
-#include <thread>
 
 uint32_t Thread::threadCount_ = 0;
 
