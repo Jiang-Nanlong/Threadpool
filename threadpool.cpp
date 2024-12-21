@@ -155,6 +155,11 @@ ThreadPool::ThreadPool(): initThreadSize_(0),
                           isRunning_(false) {
 }
 
+ThreadPool &ThreadPool::getInstance() {
+    static ThreadPool pool;
+    return pool;
+}
+
 ThreadPool::~ThreadPool() {
     isRunning_ = false;
 
@@ -165,6 +170,9 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::start(uint8_t threadnum) {
+    if (isRunning_)
+        return;
+
     isRunning_ = true;
     initThreadSize_ = std::min(static_cast<int>(threadnum), threadSizeThreshold_);
 

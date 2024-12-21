@@ -32,7 +32,7 @@ int main() {
     {
 #endif
 
-        ThreadPool pool;
+        ThreadPool &pool = ThreadPool::getInstance();
         // pool.setMode(PoolMode::MODE_CACHED);
         pool.start(4);
 
