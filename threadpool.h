@@ -183,8 +183,10 @@ private:
     // 从任务队列中消费任务
     void threadFunc(uint32_t threadId);
 
-public:
     ThreadPool();
+
+public:
+    static ThreadPool &getInstance();
 
     ~ThreadPool();
 
@@ -204,5 +206,7 @@ public:
     ThreadPool &operator=(const ThreadPool &) = delete;
 
     ThreadPool(ThreadPool &&) = delete;
+
+    ThreadPool &operator=(ThreadPool &&) = delete;
 };
 #endif //THREADPOOL_H
