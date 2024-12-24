@@ -5,27 +5,22 @@
 
 #define TEST
 
-#ifdef TEST
-class test : public Task {
-    int left;
-    int right;
+int sum1(int a, int b) {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    return a + b;
+}
 
-public:
-    test(int left, int right): left(left), right(right) {
-    }
+int sum2(int a, int b, int c) {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    Any run() override {
-        std::cout << "test start: =======" << std::endl;
-        uint64_t sum = 0;
-        for (int i = left; i <= right; i++) {
-            sum += i;
-        }
-        return sum;
-        // std::this_thread::sleep_for(std::chrono::seconds(5));
-        return "";
-    }
-};
-#endif
+    return a + b + c;
+}
+
+int sum3(int a, int b, int c, int d) {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    return a + b + c + d;
+}
+
 
 int main() {
 #ifdef TEST
@@ -34,24 +29,20 @@ int main() {
 
         ThreadPool &pool = ThreadPool::getInstance();
         // pool.setMode(PoolMode::MODE_CACHED);
-        pool.start(4);
+        pool.start(2);
 
 #ifdef TEST
-        Result re1 = pool.submitTask(std::make_shared<test>(1, 100000000));
-        Result re2 = pool.submitTask(std::make_shared<test>(100000001, 200000000));
-        Result re3 = pool.submitTask(std::make_shared<test>(200000001, 300000000));
-        Result re4 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
-        Result re5 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
-        Result re6 = pool.submitTask(std::make_shared<test>(300000001, 400000000));
+        auto res1 = pool.submitTask(sum1, 1, 1);
+        auto res2 = pool.submitTask(sum2, 2, 2, 2);
+        auto res3 = pool.submitTask(sum3, 3, 3, 3, 3);
+        auto res4 = pool.submitTask(sum3, 3, 3, 3, 3);
+        auto res5 = pool.submitTask(sum3, 3, 3, 3, 3);
 
-        uint64_t res1 = re1.get().cast_<uint64_t>();
-        uint64_t res2 = re2.get().cast_<uint64_t>();
-        uint64_t res3 = re3.get().cast_<uint64_t>();
-        uint64_t res4 = re4.get().cast_<uint64_t>();
-        uint64_t res5 = re5.get().cast_<uint64_t>();
-        uint64_t res6 = re6.get().cast_<uint64_t>();
-        std::cout << (res1 + res2 + res3 + res4 + res5 + res6) << std::endl;
-        // std::cout << res1 << std::endl;
+        std::cout << res1.get() << std::endl;
+        std::cout << res2.get() << std::endl;
+        std::cout << res3.get() << std::endl;
+        std::cout << res4.get() << std::endl;
+        std::cout << res5.get() << std::endl;
     }
 #endif
     std::cout << "main over" << std::endl;
